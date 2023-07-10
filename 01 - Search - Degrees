@@ -60,15 +60,9 @@ def main():
 
     # Load data from files into memory
     print("Loading data...")
-    load_data("small")
+    load_data("large")
     print("Data loaded.")
 
-    #delete these when done
-    print(names)
-    print(people)
-    print(movies)
-
-    print(help(people))
 
     source = person_id_for_name(input("Name: "))
     if source is None:
@@ -99,55 +93,43 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
-    actors_explored = []
-    no_of_explored_states = 0
-
     # Initializing the first node
-    firstActor = Node(state=source, parent=None, action=None)
-    actorFrontier = QueueFrontier()
-    movieFrontier = QueueFrontier()
-    actorFrontier.add(firstActor)
+    start = Node(state=source, parent=None, action=None)
 
-    # Initializing an empty explored set
-    exploredActors = set()
-    exploredMovies = set()
+    # Initialize frontier using QueueFrontier
+    frontier = QueueFrontier()
+    frontier.add(start)
 
-    # Keep looking until the function is found
+    # Initialize an empty explored set
+    explored = set()
+
+    # Keep looping until a solution is found
     while True:
-        # If nothing is left in the frontier, then no link
-        if actorFrontier.empty():
-            raise Exception("No link between the actors")
+        # If frontier is empty, no path exists
+        if frontier.empty():
+            return None
 
-        # Choose a node from the frontier
-        node = actorFrontier.remove()
-        no_of_explored_states += 1
+        # Remove a node from the frontier for exploration
+        node = frontier.remove()
 
-        # If the node is the goal, then we have a solution
+        # If the node is the goal, we have found a solution
         if node.state == target:
-            actions = []
-            cells = []
-
-            # Follow the parent nodes to find the solution
+            path = []
             while node.parent is not None:
-                actions.append(node.action)
-                cells.append(node.state)
+                path.append((node.action, node.state))
                 node = node.parent
-            actions.reverse()
-            cells.reverse()
-            solution = (actions, cells)
-            return solution
+            path.reverse()
+            return path
 
-        # Add the actor to the explored set
-        exploredActors.add(node.state)
+        # Add the current node to the explored set
+        explored.add(node.state)
 
-        # Add the movies to the frontier
-        if node.state in people:
-            movies_of_actor = people[node.state]['movies']
-            for movie_id in movies_of_actor:
-                if not movieFrontier.contains_state(movie_id) and movie_id not in exploredMovies:
-                    child = Node(state=movie_id, parent=node, action=movie_id)
-                    movieFrontier.add(child)
-                    exploredMovies.add(movie_id)
+        # Add neighbors to the frontier
+        neighbors = neighbors_for_person(node.state)
+        for movie_id, actor_id in neighbors:
+            if not frontier.contains_state(actor_id) and actor_id not in explored:
+                child = Node(state=actor_id, parent=node, action=movie_id)
+                frontier.add(child)
 
 def person_id_for_name(name):
     """
